@@ -36,6 +36,38 @@ fn setup_music(asset_server: Res<AssetServer>, audio: Res<Audio>) {
     audio.play(music);
 }
 
+fn setup(mut commands: Commands, asset_server: Res<AssetServer>) {
+    commands.spawn_bundle(OrthographicCameraBundle::new_2d());
+    let floor_texture = asset_server.load("tiles/floor1.png");
+    commands.spawn_bundle(SpriteBundle {
+        texture: floor_texture.clone(),
+        transform: Transform::from_translation(Vec3::new(-65.0, 0.0, 0.0)),
+        ..Default::default()
+    });
+    commands.spawn_bundle(SpriteBundle {
+        texture: floor_texture.clone(),
+        transform: Transform::from_translation(Vec3::new(129.0, -61.0, 0.0)),
+        ..Default::default()
+    });
+    commands.spawn_bundle(SpriteBundle {
+        texture: floor_texture.clone(),
+        transform: Transform::from_translation(Vec3::new(-194.0, -121.0, 0.0)),
+        ..Default::default()
+    });
+    commands.spawn_bundle(SpriteBundle {
+        texture: floor_texture.clone(),
+        transform: Transform::from_translation(Vec3::new(0.0, -181.0, 0.0)),
+        ..Default::default()
+    });
+    commands.spawn_bundle(SpriteBundle {
+        texture: asset_server.load("dungeon-tileset/NPC/NPC1.png"),
+        transform: Transform::from_translation(
+            Vec3::new(0.0, 0.0, 15.0),
+        ),
+        ..Default::default()
+    });
+}
+
 pub struct HelloPlugin;
 
 impl Plugin for HelloPlugin {
@@ -56,7 +88,7 @@ impl Plugin for HelloPlugin {
             app.add_startup_system(setup_music);
         }
 
-        app.add_startup_system(add_player).add_system(greet_people);
+        app.add_startup_system(add_player).add_startup_system(setup).add_system(greet_people);
     }
 }
 
