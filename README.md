@@ -1,3 +1,3 @@
 # Zork
 
-RPG game, used to learn Rust 
+RPG game project, used to learn Rust 
