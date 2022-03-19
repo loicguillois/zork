@@ -1,4 +1,12 @@
 use bevy::prelude::*;
+use config::Config;
+use serde::{Deserialize, Serialize};
+use std::collections::HashMap;
+
+#[derive(Debug, Serialize, Deserialize)]
+struct MyConfig {
+    music_enabled: bool,
+}
 
 struct GreetTimer(Timer);
 
@@ -17,7 +25,10 @@ struct Player;
 struct Name(String);
 
 fn add_player(mut commands: Commands) {
-    commands.spawn().insert(Player).insert(Name("Zork".to_string()));
+    commands
+        .spawn()
+        .insert(Player)
+        .insert(Name("Zork".to_string()));
 }
 
 fn setup_music(asset_server: Res<AssetServer>, audio: Res<Audio>) {
@@ -29,10 +40,23 @@ pub struct HelloPlugin;
 
 impl Plugin for HelloPlugin {
     fn build(&self, app: &mut App) {
-        app.insert_resource(GreetTimer(Timer::from_seconds(2.0, true)))
-            .add_startup_system(setup_music)
-            .add_startup_system(add_player)
-            .add_system(greet_people);
+        let settings = Config::builder()
+            .add_source(config::File::with_name("Settings"))
+            .add_source(config::Environment::with_prefix("APP"))
+            .build()
+            .unwrap();
+
+        let music_enabled = &settings
+            .try_deserialize::<HashMap<String, String>>()
+            .unwrap()["music_enabled"];
+
+        app.insert_resource(GreetTimer(Timer::from_seconds(2.0, true)));
+
+        if music_enabled == "true" {
+            app.add_startup_system(setup_music);
+        }
+
+        app.add_startup_system(add_player).add_system(greet_people);
     }
 }
 
@@ -42,4 +66,3 @@ fn main() {
         .add_plugin(HelloPlugin)
         .run();
 }
-
