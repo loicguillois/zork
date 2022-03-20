@@ -34,7 +34,10 @@ fn greet_people(time: Res<Time>, mut timer: ResMut<GreetTimer>, query: Query<&Lo
 }
 
 // mut camera_query: Query<&mut Transform, With<Camera>>,
-fn player_movement(mut player: Query<(&Player, &mut Transform)>, query: Query<&Location, With<Player>>) {
+fn player_movement(
+    mut player: Query<(&Player, &mut Transform)>,
+    query: Query<&Location, With<Player>>
+) {
     let start_x = 50.0;
     let start_y = 50.0;
 
@@ -48,6 +51,17 @@ fn player_movement(mut player: Query<(&Player, &mut Transform)>, query: Query<&L
             // camera_transform.translation.x = location.0.x;
         }
     }
+}
+
+fn camera_movement(
+    mut camera_query: Query<&mut Transform, With<Camera>>,
+    query: Query<&Location, With<Player>>
+) {
+        for location in query.iter() {
+            let mut camera_transform = camera_query.single_mut();
+            camera_transform.translation.y = location.0.y;
+            camera_transform.translation.x = location.0.x;
+        }
 }
 
 #[derive(Component)]
@@ -72,7 +86,7 @@ fn setup_music(asset_server: Res<AssetServer>, audio: Res<Audio>) {
     audio.play(music);
 }
 
-fn setup(mut commands: Commands, asset_server: Res<AssetServer>, query: Query<&Location, With<Player>>) {
+fn setup(mut commands: Commands, asset_server: Res<AssetServer>) {
     commands.spawn()
     .insert_bundle(OrthographicCameraBundle::new_2d())
     .insert(Transform::from_xyz(0.0, 0.0, 1000.0));
@@ -118,7 +132,7 @@ fn keyboard_event_system(mut keyboard_input_events: EventReader<KeyboardInput>, 
     for event in keyboard_input_events.iter() {
         info!("{:?}", event.scan_code);
 
-        for (player, mut location) in query.iter_mut() {
+        for (_player, mut location) in query.iter_mut() {
             
             if event.scan_code == 124 {
                 location.0.x += 10.0;
@@ -158,7 +172,8 @@ impl Plugin for HelloPlugin {
             .init_resource::<GameState>()
             .add_system(keyboard_event_system)
             .add_system(greet_people)
-            .add_system(player_movement);
+            .add_system(player_movement)
+            .add_system(camera_movement);
     }
 }
 
