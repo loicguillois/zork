@@ -33,11 +33,19 @@ fn greet_people(time: Res<Time>, mut timer: ResMut<GreetTimer>, query: Query<&Lo
     }
 }
 
+// mut camera_query: Query<&mut Transform, With<Camera>>,
 fn player_movement(mut player: Query<(&Player, &mut Transform)>, query: Query<&Location, With<Player>>) {
+    let start_x = 50.0;
+    let start_y = 50.0;
+
     for (_player, mut transform) in player.iter_mut() {
         for location in query.iter() {
-            transform.translation.y = location.0.y;
-            transform.translation.x = location.0.x;
+            transform.translation.y =  start_y + location.0.y;
+            transform.translation.x = start_x + location.0.x;
+
+            // let mut camera_transform = camera_query.single_mut();
+            // camera_transform.translation.y = location.0.y;
+            // camera_transform.translation.x = location.0.x;
         }
     }
 }
@@ -65,28 +73,45 @@ fn setup_music(asset_server: Res<AssetServer>, audio: Res<Audio>) {
 }
 
 fn setup(mut commands: Commands, asset_server: Res<AssetServer>, query: Query<&Location, With<Player>>) {
-    commands.spawn_bundle(OrthographicCameraBundle::new_2d());
+    commands.spawn()
+    .insert_bundle(OrthographicCameraBundle::new_2d())
+    .insert(Transform::from_xyz(0.0, 0.0, 1000.0));
+
+    let width: usize = 5;
+    let height: usize = 5;
+
+    let step_x = 191;
+    let step_y = 120;
+
+    let map = vec![vec![0; width]; height];
+
     let floor_texture = asset_server.load("tiles/floor1.png");
-    commands.spawn_bundle(SpriteBundle {
-        texture: floor_texture.clone(),
-        transform: Transform::from_translation(Vec3::new(-65.0, 0.0, 0.0)),
-        ..Default::default()
-    });
-    commands.spawn_bundle(SpriteBundle {
-        texture: floor_texture.clone(),
-        transform: Transform::from_translation(Vec3::new(129.0, -61.0, 0.0)),
-        ..Default::default()
-    });
-    commands.spawn_bundle(SpriteBundle {
-        texture: floor_texture.clone(),
-        transform: Transform::from_translation(Vec3::new(-194.0, -121.0, 0.0)),
-        ..Default::default()
-    });
-    commands.spawn_bundle(SpriteBundle {
-        texture: floor_texture.clone(),
-        transform: Transform::from_translation(Vec3::new(0.0, -181.0, 0.0)),
-        ..Default::default()
-    });
+    let wall_texture = asset_server.load("tiles/WallV_Tile31d.png");
+
+    for x in 0..width {
+        for y in 0..height {
+            let calculated_x = x as i32 * step_x + 130 * y as i32;
+            let calculated_y = y as i32 * step_y - 60 * x as i32;
+            println!("{:?}", calculated_y);
+            commands.spawn_bundle(SpriteBundle {
+                texture: if map[y][x] == 0 { floor_texture.clone() } else { wall_texture.clone() },
+                transform: Transform::from_translation(Vec3::new(calculated_x as f32, calculated_y as f32, 0.0)),
+                ..Default::default()
+            });
+        }
+    }
+
+    for y in (0..height).rev() {
+        let x = -1;
+        let calculated_x = x as i32 * step_x + 130 * y as i32;
+        let calculated_y = y as i32 * step_y - 60 * x as i32;
+        println!("{:?}",y);
+        commands.spawn_bundle(SpriteBundle {
+            texture: wall_texture.clone(),
+            transform: Transform::from_translation(Vec3::new(calculated_x as f32, calculated_y as f32, (height - y) as f32)),
+            ..Default::default()
+        });
+    }
 }
 
 fn keyboard_event_system(mut keyboard_input_events: EventReader<KeyboardInput>, mut query: Query<(&Player, &mut Location)>) {
