@@ -33,7 +33,6 @@ fn greet_people(time: Res<Time>, mut timer: ResMut<GreetTimer>, query: Query<&Lo
     }
 }
 
-// mut camera_query: Query<&mut Transform, With<Camera>>,
 fn player_movement(
     mut player: Query<(&Player, &mut Transform)>,
     query: Query<&Location, With<Player>>
@@ -45,10 +44,6 @@ fn player_movement(
         for location in query.iter() {
             transform.translation.y =  start_y + location.0.y;
             transform.translation.x = start_x + location.0.x;
-
-            // let mut camera_transform = camera_query.single_mut();
-            // camera_transform.translation.y = location.0.y;
-            // camera_transform.translation.x = location.0.x;
         }
     }
 }
