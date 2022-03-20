@@ -10,17 +10,34 @@ struct MyConfig {
 
 struct GreetTimer(Timer);
 
-fn greet_people(time: Res<Time>, mut timer: ResMut<GreetTimer>, query: Query<&Location, With<Player>>, mut commands: Commands, asset_server: Res<AssetServer>) {
+#[derive(Default)]
+struct GameState {
+    player_added: bool,
+}
+
+fn greet_people(time: Res<Time>, mut timer: ResMut<GreetTimer>, query: Query<&Location, With<Player>>, mut commands: Commands, asset_server: Res<AssetServer>, mut game_state: ResMut<GameState>) {
     if timer.0.tick(time.delta()).just_finished() {
+        if !game_state.player_added {
+            for location in query.iter() {
+                //println!("{}", location.0.x);
+                commands.spawn_bundle(SpriteBundle {
+                    texture: asset_server.load("dungeon-tileset/NPC/NPC1.png"),
+                    transform: Transform::from_translation(
+                        Vec3::new(location.0.x, location.0.y, 15.0),
+                    ),
+                    ..Default::default()
+                }).insert(Player);
+            }
+            game_state.player_added = true;
+        }
+    }
+}
+
+fn player_movement(mut player: Query<(&Player, &mut Transform)>, query: Query<&Location, With<Player>>) {
+    for (_player, mut transform) in player.iter_mut() {
         for location in query.iter() {
-            //println!("{}", location.0.x);
-            commands.spawn_bundle(SpriteBundle {
-                texture: asset_server.load("dungeon-tileset/NPC/NPC1.png"),
-                transform: Transform::from_translation(
-                    Vec3::new(location.0.x, location.0.y, 15.0),
-                ),
-                ..Default::default()
-            });
+            transform.translation.y = location.0.y;
+            transform.translation.x = location.0.x;
         }
     }
 }
@@ -47,7 +64,7 @@ fn setup_music(asset_server: Res<AssetServer>, audio: Res<Audio>) {
     audio.play(music);
 }
 
-fn setup(query: Query<&Location, With<Player>>, mut commands: Commands, asset_server: Res<AssetServer>) {
+fn setup(mut commands: Commands, asset_server: Res<AssetServer>, query: Query<&Location, With<Player>>) {
     commands.spawn_bundle(OrthographicCameraBundle::new_2d());
     let floor_texture = asset_server.load("tiles/floor1.png");
     commands.spawn_bundle(SpriteBundle {
@@ -113,8 +130,10 @@ impl Plugin for HelloPlugin {
 
         app.add_startup_system(add_player)
             .add_startup_system(setup)
+            .init_resource::<GameState>()
             .add_system(keyboard_event_system)
-            .add_system(greet_people);
+            .add_system(greet_people)
+            .add_system(player_movement);
     }
 }
 
